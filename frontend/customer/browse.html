@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Customer Browse - Frontend Only</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg bg-white border-bottom">
+      <div class="container">
+        <a class="navbar-brand fw-semibold" href="../index.html">Food & Grocery</a>
+        <div class="ms-auto">
+          <a class="btn btn-outline-secondary" href="../login.html">Logout</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+      <h1 class="h4 mb-3">Browse Items</h1>
+      <div class="row">
+        <div class="col-lg-8">
+          <div id="productsRow" class="row g-3"></div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header">Cart</div>
+            <div class="card-body">
+              <ul id="cartList" class="list-group mb-3"></ul>
+              <div class="mb-3">
+                <label class="form-label">Delivery Address</label>
+                <input class="form-control" id="address" placeholder="Home Address">
+              </div>
+              <button class="btn btn-primary w-100" id="checkoutBtn">Proceed to Pay (Simulated)</button>
+              <div id="message" class="small text-muted mt-2"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      const PLATFORM_FEE = 10;
+      const DELIVERY_FEE = 30;
+
+      function getList(key) { return JSON.parse(localStorage.getItem(key) || '[]'); }
+      function saveList(key, list) { localStorage.setItem(key, JSON.stringify(list)); }
+
+      let cart = [];
+
+      function renderProducts() {
+        const products = getList('products');
+        const row = document.getElementById('productsRow');
+        row.innerHTML = '';
+        if (products.length === 0) {
+          row.innerHTML = '<div class="text-muted">No products. Ask a vendor to add products.</div>';
+          return;
+        }
+        products.forEach(p => {
+          const col = document.createElement('div');
+          col.className = 'col-md-4';
+          col.innerHTML = `
+            <div class="card h-100">
+              ${p.imageUrl ? `<img src="${p.imageUrl}" class="card-img-top" style="height:140px;object-fit:cover;">` : ''}
+              <div class="card-body">
+                <h5 class="card-title">${p.name}</h5>
+                <p class="card-text small">${p.description || ''}</p>
+                <p class="card-text"><strong>₹${p.price}</strong> • Commission ${(p.commissionRate*100).toFixed(0)}%</p>
+                <button class="btn btn-sm btn-outline-primary" data-id="${p.id}">Add</button>
+              </div>
+            </div>
+          `;
+          row.appendChild(col);
+        });
+        document.querySelectorAll('button[data-id]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = parseInt(e.currentTarget.getAttribute('data-id'));
+            const products = getList('products');
+            const p = products.find(x => x.id === id);
+            if (!p) return;
+            const idx = cart.findIndex(ci => ci.product.id === id);
+            if (idx >= 0) cart[idx].quantity += 1;
+            else cart.push({ product: p, quantity: 1, cutlery: false });
+            renderCart();
+          });
+        });
+      }
+
+      function renderCart() {
+        const ul = document.getElementById('cartList');
+        ul.innerHTML = '';
+        if (cart.length === 0) {
+          ul.innerHTML = '<li class="list-group-item text-muted">No items in cart.</li>';
+          return;
+        }
+        cart.forEach((ci, i) => {
+          const li = document.createElement('li');
+          li.className = 'list-group-item d-flex justify-content-between align-items-center';
+          li.innerHTML = `
+            <div>
+              <div><strong>${ci.product.name}</strong> × ${ci.quantity}</div>
+              <div class="small text-muted">₹${ci.product.price}</div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <label class="small">Cutlery</label>
+              <input type="checkbox" ${ci.cutlery?'checked':''} data-idx="${i}">
+            </div>
+          `;
+          ul.appendChild(li);
+        });
+        document.querySelectorAll('input[type="checkbox"][data-idx]').forEach(chk => {
+          chk.addEventListener('change', (e) => {
+            const idx = parseInt(e.currentTarget.getAttribute('data-idx'));
+            cart[idx].cutlery = e.currentTarget.checked;
+            renderCart();
+          });
+        });
+      }
+
+      document.getElementById('checkoutBtn').addEventListener('click', function() {
+        const address = document.getElementById('address').value.trim();
+        const message = document.getElementById('message');
+        if (cart.length === 0) {
+          message.textContent = 'Cart is empty.';
+          return;
+        }
+        let subtotal = 0;
+        let adminCommission = 0;
+        let vendorEarning = 0;
+        let partnerEarning = 0;
+
+        cart.forEach(ci => {
+          const base = Number(ci.product.price) * ci.quantity;
+          const cutleryCost = ci.cutlery ? 10 * ci.quantity : 0;
+          const commission = base * ci.product.commissionRate;
+          subtotal += base + cutleryCost;
+          adminCommission += commission;
+          vendorEarning += base - commission + cutleryCost;
+        });
+
+        const platformFee = PLATFORM_FEE;
+        const deliveryFee = DELIVERY_FEE;
+        partnerEarning += deliveryFee;
+
+        const total = subtotal + platformFee + deliveryFee;
+        const adminEarning = adminCommission + platformFee;
+        const expiresAt = Date.now() + (5 * 60 * 1000);
+
+        const orders = getList('orders');
+        const id = (orders[orders.length - 1]?.id || 1000) + 1;
+        orders.push({
+          id,
+          status: 'PENDING',
+          items: cart.map(ci => ({ productId: ci.product.id, quantity: ci.quantity, cutlery: ci.cutlery })),
+          platformFee, deliveryFee, subtotal, total,
+          vendorEarning, partnerEarning, adminEarning,
+          expiresAt,
+          acceptedAt: null,
+          partnerId: null
+        });
+        saveList('orders', orders);
+        cart = [];
+        renderCart();
+        message.textContent = `Order ${id} placed. Awaiting vendor acceptance.`;
+      });
+
+      renderProducts();
+      renderCart();
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

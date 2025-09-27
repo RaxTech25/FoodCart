@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Food & Grocery Marketplace - Frontend</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  </head>
+  <body class="bg-light">
+    <nav class="navbar navbar-expand-lg bg-white border-bottom">
+      <div class="container">
+        <a class="navbar-brand fw-semibold" href="index.html">Food & Grocery</a>
+        <div class="ms-auto">
+          <a class="btn btn-outline-primary me-2" href="login.html">Login</a>
+          <div class="btn-group">
+            <a class="btn btn-outline-secondary" href="register/vendor.html">Register Vendor</a>
+            <a class="btn btn-outline-secondary" href="register/partner.html">Register Partner</a>
+            <a class="btn btn-outline-secondary" href="register/customer.html">Register Customer</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+      <div class="row">
+        <div class="col-lg-8">
+          <h1 class="h3">Welcome to Food & Grocery Marketplace</h1>
+          <p>This is a static frontend-only preview using HTML, Bootstrap, and JavaScript. Use the navigation to explore role-based pages.</p>
+          <ul>
+            <li><a href="login.html">Login</a> (Admin, Staff, Vendor, Partner, Customer)</li>
+            <li>Admin Dashboard: <a href="admin.html">admin.html</a></li>
+            <li>Staff Dashboard: <a href="staff.html">staff.html</a></li>
+            <li>Vendor: <a href="vendor/index.html">Dashboard</a>, <a href="vendor/products.html">Products</a>, <a href="vendor/orders.html">Orders</a>, <a href="vendor/shop.html">Shop</a></li>
+            <li>Partner: <a href="partner/index.html">Dashboard</a></li>
+            <li>Customer: <a href="customer/index.html">Home</a>, <a href="customer/browse.html">Browse</a></li>
+            <li>Register: <a href="register/vendor.html">Vendor</a>, <a href="register/partner.html">Partner</a>, <a href="register/customer.html">Customer</a></li>
+          </ul>
+        </div>
+        <div class="col-lg-4">
+          <div class="card">
+            <div class="card-header">Quick Tips</div>
+            <div class="card-body small">
+              <p>This frontend uses localStorage to simulate data. No backend/API is required.</p>
+              <p>Default Admin: username <code>admin</code>, password <code>Admin@123</code><br>
+              Default Staff: username <code>staff</code>, password <code>Staff@123</code></p>
+              <p>Register Vendor/Partner/Customer to create simulated accounts.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="container py-4 border-top">
+      <div class="d-flex justify-content-between small text-muted">
+        <div>© Food & Grocery Marketplace</div>
+        <div>Frontend-only Demo</div>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
