@@ -1,5 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+
+const MapPicker = dynamic(() => import('../../../components/map/MapPicker'), { ssr: false });
 
 export default function VendorShopPage() {
   const [name, setName] = useState('');
@@ -54,6 +57,11 @@ export default function VendorShopPage() {
     );
   }
 
+  function handleMapChange(newLat: number, newLng: number) {
+    setLat(String(newLat));
+    setLng(String(newLng));
+  }
+
   return (
     <div className="max-w-2xl mx-auto bg-white border rounded p-6 space-y-4">
       <h1 className="text-2xl font-semibold">Vendor Shop Location</h1>
@@ -64,6 +72,7 @@ export default function VendorShopPage() {
           <input className="input" placeholder="Latitude" value={lat} onChange={e=>setLat(e.target.value)} />
           <input className="input" placeholder="Longitude" value={lng} onChange={e=>setLng(e.target.value)} />
         </div>
+        <MapPicker lat={lat ? parseFloat(lat) : undefined} lng={lng ? parseFloat(lng) : undefined} onChange={handleMapChange} />
         <div className="flex items-center gap-2">
           <input id="auth" type="checkbox" checked={authorized} onChange={e=>setAuthorized(e.target.checked)} />
           <label htmlFor="auth">Authorized (licensed shop)</label>
@@ -74,7 +83,7 @@ export default function VendorShopPage() {
         </div>
       </form>
       <p className="text-sm">{message}</p>
-      <p className="text-xs text-gray-600">Accurate shop coordinates enable better partner assignment and customer delivery.</p>
+      <p className="text-xs text-gray-600">Click on the map to set shop location. Accurate coordinates enable better partner assignment and customer delivery.</p>
     </div>
   );
 }

@@ -1,10 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+
+const PartnerMap = dynamic(() => import('../../components/map/PartnerMap'), { ssr: false });
 
 type Order = {
   id: number;
   total: string;
-  vendor: { shop?: { lat: number; lng: number } | null };
+  vendor: { shop?: { lat: number; lng: number } | null; user?: { lat?: number | null; lng?: number | null } | null };
 };
 
 export default function PartnerHome() {
@@ -83,6 +86,13 @@ export default function PartnerHome() {
         </div>
         <p className="text-sm mt-2">{message}</p>
       </div>
+
+      {online && (
+        <div className="bg-white border rounded p-4 space-y-3">
+          <h2 className="font-medium">Map</h2>
+          <PartnerMap orders={orders} />
+        </div>
+      )}
 
       <div className="bg-white border rounded p-4">
         <h2 className="font-medium mb-2">Nearby Orders</h2>
