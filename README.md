@@ -1,40 +1,60 @@
 # Food & Grocery Marketplace (Phase 1)
 
-Stack: Next.js 14, Prisma, SQLite, Tailwind
+Stack: Next.js 14, Prisma, PostgreSQL (Neon), Tailwind
 
 ## Prerequisites
 - Node.js 18+ (recommended: 20+)
 - npm 9+
-- SQLite (bundled; no external setup needed)
+- A PostgreSQL database (Neon recommended)
 
-## Setup & Run
+## Local Setup (PostgreSQL)
+1) Create a Neon project (https://neon.tech)
+- Create a database and a role
+- Copy the connection string (ensure `sslmode=require`)
 
-1) Install dependencies
+2) Add environment variables
+- Create `.env` from `.env.example` and set:
+```
+DATABASE_URL="postgres://USER:PASSWORD@HOST/DBNAME?sslmode=require"
+```
+
+3) Install dependencies
 ```bash
 npm install
 ```
 
-2) Generate Prisma client
+4) Generate Prisma client
 ```bash
 npx prisma generate
 ```
 
-3) Initialize the database
+5) Initialize the database (creates migrations folder)
 ```bash
 npx prisma migrate dev --name init
 ```
 
-4) Seed Admin and Staff users
+6) Seed Admin and Staff users
 ```bash
 npx ts-node --transpile-only prisma/seed.ts
 ```
 
-5) Start the dev server
+7) Start the dev server
 ```bash
 npm run dev
 ```
 
 Open http://localhost:3000
+
+## Production Deploy (Vercel + Neon)
+1) Push this repo to GitHub
+2) Create a project on Vercel and import the repo
+3) In Vercel Project Settings → Environment Variables:
+- Add `DATABASE_URL` with your Neon connection string (with `sslmode=require`)
+4) Build & deploy
+- `package.json` runs `prisma generate` and `prisma migrate deploy` automatically during build
+
+Optional: Run seed in production
+- Vercel doesn't run arbitrary seed scripts. You can temporarily add a route to trigger seeding or run `prisma` and `ts-node` in a one-off CI step. Ask me if you'd like a secure seed endpoint.
 
 ## Logins (first login requires OTP)
 - Admin: `admin` / `Admin@123`
@@ -54,14 +74,10 @@ Open http://localhost:3000
 - Document uploads, product catalog, ordering flow, partner assignment, payments, and charts will be implemented in later phases.
 
 ## Troubleshooting
-- If `prisma migrate` fails, delete the dev DB and reset:
+- If migrations fail locally, reset:
 ```bash
-rm prisma/dev.db
 npx prisma migrate reset
 npx prisma migrate dev --name init
 ```
-- If TypeScript type errors appear, ensure Node 18+ and run:
-```bash
-npm run dev
-```
-- If OTP verification fails, ensure you entered the username used during login when submitting OTP.
+- Ensure `DATABASE_URL` uses `sslmode=require` on Neon.
+- If OTP verification fails, ensure you entered the same username used during login when submitting OTP.
