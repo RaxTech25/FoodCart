@@ -16,6 +16,7 @@ Stack: Next.js 14, Prisma, PostgreSQL (Neon), Tailwind
 - Create `.env` from `.env.example` and set:
 ```
 DATABASE_URL="postgres://USER:PASSWORD@HOST/DBNAME?sslmode=require"
+SEED_SECRET="replace-with-strong-secret"
 ```
 
 3) Install dependencies
@@ -33,7 +34,7 @@ npx prisma generate
 npx prisma migrate dev --name init
 ```
 
-6) Seed Admin and Staff users
+6) Seed Admin and Staff users (locally)
 ```bash
 npx ts-node --transpile-only prisma/seed.ts
 ```
@@ -50,17 +51,22 @@ Open http://localhost:3000
 2) Create a project on Vercel and import the repo
 3) In Vercel Project Settings → Environment Variables:
 - Add `DATABASE_URL` with your Neon connection string (with `sslmode=require`)
+- Add `SEED_SECRET` (strong random value)
 4) Build & deploy
 - `package.json` runs `prisma generate` and `prisma migrate deploy` automatically during build
 
-Optional: Run seed in production
-- Vercel doesn't run arbitrary seed scripts. You can temporarily add a route to trigger seeding or run `prisma` and `ts-node` in a one-off CI step. Ask me if you'd like a secure seed endpoint.
+### Seeding on Vercel
+Vercel can't run `ts-node` seed directly. Use the secure seed endpoint:
+- POST `https://<your-vercel-domain>/api/admin/seed`
+- Header: `x-seed-secret: <SEED_SECRET>`
+This will upsert Admin and Staff users.
 
 ## Logins (first login requires OTP)
 - Admin: `admin` / `Admin@123`
 - Staff: `staff` / `Staff@123`
 
 ## Key Pages
+- Health: `/api/health`
 - Login: `/(auth)/login`
 - Register Vendor: `/register/vendor`
 - Register Partner: `/register/partner`
