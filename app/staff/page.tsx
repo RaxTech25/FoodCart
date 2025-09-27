@@ -84,6 +84,10 @@ export default async function StaffPage() {
                     <input className="input inline w-64" name="reason" placeholder="Enter rejection reason" />
                     <button className="btn-outline ml-2" type="submit">Reject</button>
                   </form>
+                  <form action="/api/staff/partner/kit" method="POST" className="inline ml-4">
+                    <input type="hidden" name="id" value={String(p.id)} />
+                    <button className="btn-outline" type="submit">Mark Kit Received</button>
+                  </form>
                 </td>
               </tr>
             ))}
