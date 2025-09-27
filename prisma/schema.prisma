@@ -1,0 +1,230 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role { ADMIN STAFF VENDOR PARTNER CUSTOMER }
+enum ApprovalStatus { PENDING APPROVED REJECTED }
+enum VendorShopType { RESTAURANT_HOTEL PUSH_CART GROCERY }
+enum GroceryType { SMALL_STORE SUPERMARKET HYPERMARKET }
+enum VehicleType { BICYCLE MOTORBIKE }
+enum OrderStatus {
+  PENDING
+  VENDOR_ACCEPTED
+  VENDOR_REJECTED
+  PARTNER_ASSIGNED
+  IN_TRANSIT
+  DELIVERED
+  CANCELLED
+  AUTO_REJECTED
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  username      String   @unique
+  passwordHash  String
+  role          Role
+  phone         String   @unique
+  email         String?
+  firstLoginOtpRequired Boolean @default(true)
+  online        Boolean  @default(false)
+  lat           Float?
+  lng           Float?
+  createdAt     DateTime @default(now())
+  vendor        VendorProfile?
+  partner       PartnerProfile?
+  customer      CustomerProfile?
+  notifications Notification[]
+  otps          OTP[]
+}
+
+model OTP {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model VendorProfile {
+  id           Int            @id @default(autoincrement())
+  userId       Int            @unique
+  user         User           @relation(fields: [userId], references: [id])
+  shopType     VendorShopType
+  groceryType  GroceryType?
+  vegetarian   Boolean
+  website      String?
+  bankAccount  String
+  bankIfsc     String
+  registrationFeePaid Int     @default(0)
+  approvalStatus ApprovalStatus @default(PENDING)
+  rejectionReason String?
+  docs         Document[]
+  shop         Shop?
+  products     Product[]
+  orders       Order[]
+  createdAt    DateTime @default(now())
+}
+
+model PartnerProfile {
+  id            Int            @id @default(autoincrement())
+  userId        Int            @unique
+  user          User           @relation(fields: [userId], references: [id])
+  vehicleType   VehicleType
+  bankAccount   String
+  bankIfsc      String
+  loginLat      Float?
+  loginLng      Float?
+  radiusKm      Float          @default(5.0)
+  kitShipped    Boolean        @default(false)
+  kitReceived   Boolean        @default(false)
+  approvalStatus ApprovalStatus @default(PENDING)
+  rejectionReason String?
+  docs          Document[]
+  assignments   PartnerAssignment[]
+  sessions      PartnerLoginSession[]
+  createdAt     DateTime @default(now())
+}
+
+model CustomerProfile {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  user      User     @relation(fields: [userId], references: [id])
+  addresses Address[]
+  orders    Order[]
+}
+
+model Address {
+  id            Int      @id @default(autoincrement())
+  customerId    Int
+  customer      CustomerProfile @relation(fields: [customerId], references: [id])
+  label         String // HOME/WORK/HOTEL/OTHER
+  addressLine   String
+  city          String
+  state         String
+  pincode       String
+  lat           Float?
+  lng           Float?
+  createdAt     DateTime @default(now())
+}
+
+model Document {
+  id           Int       @id @default(autoincrement())
+  vendorId     Int?
+  partnerId    Int?
+  vendor       VendorProfile? @relation(fields: [vendorId], references: [id])
+  partner      PartnerProfile? @relation(fields: [partnerId], references: [id])
+  docType      String
+  fileUrl      String
+  createdAt    DateTime @default(now())
+}
+
+model Shop {
+  id        Int      @id @default(autoincrement())
+  vendorId  Int      @unique
+  vendor    VendorProfile @relation(fields: [vendorId], references: [id])
+  name      String
+  address   String
+  lat       Float
+  lng       Float
+  authorized Boolean @default(false)
+}
+
+model Product {
+  id           Int       @id @default(autoincrement())
+  vendorId     Int
+  vendor       VendorProfile @relation(fields: [vendorId], references: [id])
+  name         String
+  description  String?
+  price        Decimal   @db.Decimal(10,2)
+  commissionRate Float   @default(0.10)
+  imageUrl     String?
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+}
+
+model Order {
+  id             Int       @id @default(autoincrement())
+  customerId     Int
+  customer       CustomerProfile @relation(fields: [customerId], references: [id])
+  vendorId       Int
+  vendor         VendorProfile @relation(fields: [vendorId], references: [id])
+  partnerId      Int?
+  partner        PartnerProfile? @relation(fields: [partnerId], references: [id])
+  status         OrderStatus @default(PENDING)
+  items          OrderItem[]
+  platformFee    Decimal    @db.Decimal(10,2)
+  deliveryFee    Decimal    @db.Decimal(10,2)
+  subtotal       Decimal    @db.Decimal(10,2)
+  total          Decimal    @db.Decimal(10,2)
+  vendorEarning  Decimal    @db.Decimal(10,2)
+  partnerEarning Decimal    @db.Decimal(10,2)
+  adminEarning   Decimal    @db.Decimal(10,2)
+  tip            Decimal?   @db.Decimal(10,2)
+  rating         Int?
+  feedback       String?
+  createdAt      DateTime   @default(now())
+  expiresAt      DateTime?
+  acceptedAt     DateTime?
+  deliveredAt    DateTime?
+  assignment     PartnerAssignment?
+  payment        Payment?
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id])
+  productId  Int
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  cutlery    Boolean  @default(false)
+  extrasJson String?
+}
+
+model PartnerAssignment {
+  id         Int      @id @default(autoincrement())
+  orderId    Int      @unique
+  order      Order    @relation(fields: [orderId], references: [id])
+  partnerId  Int
+  partner    PartnerProfile @relation(fields: [partnerId], references: [id])
+  assignedAt DateTime @default(now())
+  pickedAt   DateTime?
+  deliveredAt DateTime?
+}
+
+model Payment {
+  id           Int      @id @default(autoincrement())
+  orderId      Int      @unique
+  order        Order    @relation(fields: [orderId], references: [id])
+  vendorAmount Decimal  @db.Decimal(10,2)
+  partnerAmount Decimal @db.Decimal(10,2)
+  adminAmount  Decimal  @db.Decimal(10,2)
+  status       String
+  recordedAt   DateTime @default(now())
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  type      String
+  content   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model PartnerLoginSession {
+  id        Int      @id @default(autoincrement())
+  partnerId Int
+  partner   PartnerProfile @relation(fields: [partnerId], references: [id])
+  loginAt   DateTime @default(now())
+  logoutAt  DateTime?
+  totalMinutes Int?
+}
