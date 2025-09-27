@@ -24,26 +24,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Order expired' }, { status: 400 });
     }
 
-    // Find nearest approved partner (simple strategy: first approved & kitReceived)
-    const partner = await prisma.partnerProfile.findFirst({
-      where: { approvalStatus: 'APPROVED', kitReceived: true },
-      include: { user: true }
-    });
-
+    // Mark as accepted; partner will claim via feed
     const updated = await prisma.order.update({
       where: { id },
       data: {
         status: 'VENDOR_ACCEPTED',
         acceptedAt: new Date(),
-        partnerId: partner?.id,
-        assignment: partner ? {
-          create: { partnerId: partner.id }
-        } : undefined
-      },
-      include: { assignment: true }
+      }
     });
 
-    // Notify (stubs)
     await prisma.notification.create({ data: { userId: user.id, type: 'ORDER', content: `Order ${id} accepted.` } });
 
     return NextResponse.json({ ok: true, order: updated });
