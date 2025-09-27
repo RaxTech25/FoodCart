@@ -1,0 +1,34 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@lib/prisma';
+import { getCurrentUserId } from '@lib/auth';
+
+export const runtime = 'nodejs';
+
+export async function POST(req: Request) {
+  try {
+    const userId = await getCurrentUserId();
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, include: { vendor: true } });
+    if (!user || user.role !== 'VENDOR' || !user.vendor) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const { id } = await req.json();
+    if (!id) return NextResponse.json({ error: 'Missing order id' }, { status: 400 });
+
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order || order.vendorId !== user.vendor.id) return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+
+    if (order.status !== 'PENDING') return NextResponse.json({ error: 'Order not pending' }, { status: 400 });
+
+    const updated = await prisma.order.update({
+      where: { id },
+      data: { status: 'VENDOR_REJECTED' }
+    });
+
+    await prisma.notification.create({ data: { userId: user.id, type: 'ORDER', content: `Order ${id} rejected.` } });
+
+    return NextResponse.json({ ok: true, order: updated });
+  } catch {
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+  }
+}
